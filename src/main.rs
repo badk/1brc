@@ -1,9 +1,11 @@
 use bstr::{BStr, ByteSlice};
-use memmap::MmapOptions;
+use memmap2::Mmap;
 use rustc_hash::FxHashMap as HashMap;
-use std::{fmt::Display, fs::File};
+use std::{fmt::Display, fs::File, path::Path, time::Instant};
 
 use rayon::prelude::*;
+
+mod create_measurments;
 
 #[derive(Debug)]
 struct State {
@@ -68,14 +70,22 @@ fn merge<'a>(a: &mut HashMap<&'a BStr, State>, b: &HashMap<&'a BStr, State>) {
 }
 
 fn main() {
+    let starting_point = Instant::now();
     let cores: usize = std::thread::available_parallelism().unwrap().into();
-    let path = match std::env::args().skip(1).next() {
-        Some(path) => path,
-        None => "measurements.txt".to_owned(),
-    };
-    let file = File::open(path).unwrap();
-    let mmap = unsafe { MmapOptions::new().map(&file).unwrap() };
 
+    let path_b = std::env::args().skip(1).next();
+  
+    let path = match path_b.as_ref() {
+        Some(path) => Path::new(path),
+        None => Path::new("measurements.txt"),
+    };
+
+    if !Path::new(path).exists() {
+        create_measurments::sample(path, 1_000_000_000);
+    }
+    let file = File::open(path).unwrap();
+    let mmap = unsafe { Mmap::map(&file).unwrap() };
+    //let mmap_size = mmap.len();
     let chunk_size = mmap.len() / cores;
     let mut chunks: Vec<(usize, usize)> = vec![];
     let mut start = 0;
@@ -113,4 +123,5 @@ fn main() {
         }
     }
     println!("}}");
+    println!("Parsed the file in {:?} ms", starting_point.elapsed().as_millis());
 }
