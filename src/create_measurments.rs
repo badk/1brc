@@ -1,6 +1,6 @@
 use rand::{self, Rng};
 use rand_distr::{Normal, Distribution};
-use std::{fs::File, io::Write, path::Path, time::Instant};
+use std::{fs::File, io::Write, io::BufWriter, path::Path, time::Instant};
 
 #[derive(Clone)]
 struct WeatherStation {
@@ -436,7 +436,8 @@ fn rand_nd(mean: f64) -> f64 {
 pub fn sample(path: &Path, size: u64) {
     let start = Instant::now();
 
-    let mut file = File::create(path).unwrap();
+    let file = File::create(path).unwrap();
+    let mut writer = BufWriter::new(file);
     let stations: Vec<WeatherStation> = get_stations();
     let numb_stations = stations.len();
     let mut rng = rand::thread_rng();
@@ -447,7 +448,7 @@ pub fn sample(path: &Path, size: u64) {
         }
         let c =  rng.gen::<usize>() % numb_stations;
         let line = format!("{:?};{:?}\n", stations[c].city, rand_nd(stations[c].mean));
-        let _ = file.write(line.as_bytes());
+        let _ = writer.write(line.as_bytes());
     }
 
     println!("Created file with {:?} measurements in {:?} ms", size, start.elapsed().as_millis());

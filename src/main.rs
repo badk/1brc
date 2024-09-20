@@ -60,7 +60,7 @@ fn make_map<'a>(i: impl Iterator<Item = &'a [u8]>) -> HashMap<&'a BStr, State> {
 }
 
 fn solve_for_part((start, end): (usize, usize), mem: &[u8]) -> HashMap<&BStr, State> {
-    make_map((&mem[start..end]).lines())
+    make_map((mem[start..end]).lines())
 }
 
 fn merge<'a>(a: &mut HashMap<&'a BStr, State>, b: &HashMap<&'a BStr, State>) {
@@ -73,7 +73,7 @@ fn main() {
     let starting_point = Instant::now();
     let cores: usize = std::thread::available_parallelism().unwrap().into();
 
-    let path_b = std::env::args().skip(1).next();
+    let path_b = std::env::args().nth(1);
   
     let path = match path_b.as_ref() {
         Some(path) => Path::new(path),
